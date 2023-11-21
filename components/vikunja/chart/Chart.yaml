@@ -1,0 +1,6 @@
+apiVersion: v2
+name: vikunja
+description: Vikunja is a self-hosted tool to manage your todo-lists.
+type: application
+version: 0.1.0
+appVersion: "0.21.0"

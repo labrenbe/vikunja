@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: vikunja-frontend
+  name: vikunja-frontend
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vikunja-frontend
+  replicas: {{.Values.frontend.replicasCount}}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vikunja-frontend
+    spec:
+      serviceAccountName: vikunja-frontend
+      containers:
+      - image: {{.Values.frontend.image.repository}}:{{.Values.frontend.image.tag}}
+        imagePullPolicy: {{.Values.frontend.image.pullPolicy}}
+        name: vikunja-frontend
+        ports:
+        - containerPort: 80
+          name: http
+        env:
+        - name: VIKUNJA_API_URL
+          value: https://{{.Values.baseUrl}}/api/v1
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 1
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        securityContext:
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          runAsUser: 0
+          runAsGroup: 0
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+        resources:
+          {{- toYaml .Values.frontend.resources | nindent 12 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: vikunja-backend
+  name: vikunja-backend
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vikunja-backend
+  replicas: {{.Values.backend.replicasCount}}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vikunja-backend
+    spec:
+      containers:
+      - image: {{.Values.backend.image.repository}}:{{.Values.backend.image.tag}}
+        imagePullPolicy: {{.Values.backend.image.pullPolicy}}
+        name: vikunja-backend
+        ports:
+        - containerPort: 3456
+          name: api
+        env:
+        - name: VIKUNJA_DATABASE_TYPE
+          value: postgres
+        - name: VIKUNJA_DATABASE_DATABASE
+          value: vikunja
+        - name: VIKUNJA_FRONTEND_URL
+          value: https://{{.Values.baseUrl}}
+        envFrom:
+        - secretRef:
+            name: {{.Values.backend.database.existingSecret}}
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 3456
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 1
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3456
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          runAsUser: 0
+          runAsGroup: 0
+          capabilities:
+            add:
+            - NET_BIND_SERVICE
+        resources: 
+          {{- toYaml .Values.backend.resources | nindent 12 }}
+        volumeMounts:
+        - name: files
+          mountPath: /app/vikunja/files
+        - name: config
+          mountPath: /etc/vikunja
+          readOnly: true
+      serviceAccountName: vikunja-backend
+      volumes:
+      - name: config
+        secret:
+          secretName: {{.Values.backend.configFile.existingSecret}}
+      - name: files
+        persistenVolumeClaim:
+          claimName: vikunja-backend-files

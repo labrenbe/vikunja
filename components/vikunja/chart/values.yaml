@@ -1,0 +1,32 @@
+baseUrl: https://vikunja.example.com
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: vikunja/frontend
+    pullPolicy: Always
+    tag: 0.21.0
+  resources: {}
+
+backend:
+  replicaCount: 1
+  image:
+    repository: vikunja/api
+    pullPolicy: Always
+    tag: 0.21.0
+  resources: {}
+  database:
+    existingSecret: my-secret-name
+  configFile:
+    existingSecret: my-secret-name
+
+ingress:
+  additionalPaths: []
+  # - path: /.well-known/acme-challenge/*
+  #   pathType: ImplementationSpecific
+  #   backend:
+  #      service:
+  #       name: cm-acme-http-solver-abcde
+  #       port:
+  #         name: http
+

@@ -1,0 +1,70 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vikunja
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    name: vikunja
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/labrenbe/vikunja.git
+    targetRevision: HEAD
+    path: components/vikunja/chart
+    helm:
+      valuesObject:
+        baseUrl: vikunja.labrenz.org
+        frontend:
+          resources:
+            limits:
+              cpu: 250m
+              memory: 250Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+        backend:
+          resources:
+            limits:
+              cpu: 250m
+              memory: 250Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          database:
+            existingSecret: database
+          configFile:
+            existingSecret: vikunja-config
+          files:
+            volumeSize: 2Gi
+        ingress:
+          additionalPaths:
+          - path: /.well-known/acme-challenge/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: cm-acme-http-solver-f7fp9
+                port:
+                  name: http
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vikunja
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - PrunePropagationPolicy=foreground
+    - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  revisionHistoryLimit: 10

@@ -1,0 +1,10 @@
+auth:
+  openid:
+    enabled: true
+    redirecturl: https://vikunja.labrenz.com/auth/openid/
+    providers:
+    - name: Keycloak
+      authurl: https://auth.labrenz.org/realms/vikunja
+      logouturl: https://auth.labrenz.org/realms/vikunja/protocol/openid-connect/logout
+      clientid: vikunja
+      clientsecret: $OIDC_CLIENT_SECRET

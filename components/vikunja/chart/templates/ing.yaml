@@ -1,0 +1,37 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vikunja-ingress
+  annotations:
+    kubernetes.io/ingress.class: gce
+    kubernetes.io/ingress.allow-http: "true"
+    cert-manager.io/issuer: letsencrypt-vikunja
+  labels:
+    app.kubernetes.io/name: vikunja-frontend
+spec:
+  rules:
+  - host: {{.Values.baseUrl}}
+    http:
+      paths:
+      - path: /api/v1
+        pathType: Prefix
+        backend:
+          service:
+            name: vikunja-backend
+            port:
+              name: api
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vikunja-frontend
+            port:
+              name: http
+    {{- range .Values.ingress.additionalPaths }}
+      - path: {{ .path }}
+        pathType: {{ .pathType }}
+        backend:
+        {{- toYaml .backend | nindent 10 }}
+    {{- end }}
+  tls:
+  - secretName: vikunja-tls

@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keycloak
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    name: keycloak
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/labrenbe/vikunja.git
+    targetRevision: HEAD
+    path: components/keycloak/chart
+    helm:
+      releaseName: vikunja
+      valuesObject:
+        auth:
+          adminUser: admin
+          existingSecret: keycloak-admin
+          passwordSecretKey: KEYCLOAK_ADMIN_PASSWORD
+        resources:
+          limits:
+            cpu: 750m
+            memory: 1000Mi
+          requests:
+            cpu: 250m
+            memory: 500Mi
+        postgresql:
+          enabled: false
+        externalDatabase:
+          existingSecret: database
+          existingSecretHostKey: KEYCLOAK_DATABASE_HOST
+          existingSecretPortKey: KEYCLOAK_DATABASE_PORT
+          existingSecretUserKey: KEYCLOAK_DATABASE_USER
+          existingSecretDatabaseKey: KEYCLOAK_DATABASE_DATABASE
+          existingSecretPasswordKey: KEYCLOAK_DATABASE_PASSWORD
+        proxy: edge
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: keycloak
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - PrunePropagationPolicy=foreground
+    - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  revisionHistoryLimit: 10
