@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://github.com/labrenbe/vikunja.git
     targetRevision: HEAD
-    path: components/traefik
+    path: components/traefik-ingress
     
   destination:
     server: https://kubernetes.default.svc
