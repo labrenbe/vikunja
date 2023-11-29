@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: keycloak-ingress
   annotations:
-    kubernetes.io/ingress.class: gce
+    kubernetes.io/ingress.class: traefik
     kubernetes.io/ingress.allow-http: "true"
     cert-manager.io/issuer: letsencrypt-keycloak
   labels:
